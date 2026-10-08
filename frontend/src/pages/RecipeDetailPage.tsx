@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Chip, toast } from "@heroui/react";
+import { Button, Card, Chip, Dropdown, toast } from "@heroui/react";
 
 import { api, ApiError } from "../api/client";
 import type { Ingredient } from "../api/client";
@@ -74,8 +74,40 @@ function PortionStepper({
   );
 }
 
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+    </svg>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+      <circle cx="9" cy="20" r="1.4" />
+      <circle cx="18" cy="20" r="1.4" />
+      <path d="M2 3h2.2l2.3 11.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L21 7H5.2" />
+    </svg>
+  );
+}
+
+function DotsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
+    </svg>
+  );
+}
+
 export function RecipeDetailPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [portions, setPortions] = useState(0);
 
@@ -152,24 +184,56 @@ export function RecipeDetailPage() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <AppHeader
         actions={
-          <>
-            <Button variant="secondary" size="sm" className="no-print" onPress={() => void onShare()}>
-              Teilen
-            </Button>
-            <Link to={`/einkaufsliste?items=${shoppingItems}`}>
-              <Button variant="secondary" size="sm" className="no-print">
-                Einkaufsliste
+          <div className="no-print flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 sm:hidden">
+              <Button variant="secondary" size="sm" isIconOnly aria-label="Teilen" onPress={() => void onShare()}>
+                <ShareIcon />
               </Button>
-            </Link>
-            <Button variant="secondary" size="sm" className="no-print" onPress={() => window.print()}>
-              Drucken
-            </Button>
-            <Link to={`/admin/rezept/${data.id}`}>
-              <Button variant="secondary" size="sm" className="no-print">
-                Bearbeiten
+              <Link to={`/einkaufsliste?items=${shoppingItems}`} aria-label="Zur Einkaufsliste">
+                <Button variant="secondary" size="sm" isIconOnly>
+                  <CartIcon />
+                </Button>
+              </Link>
+              <Dropdown>
+                <Dropdown.Trigger
+                  aria-label="Weitere Aktionen"
+                  className="inline-grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+                >
+                  <DotsIcon />
+                </Dropdown.Trigger>
+                <Dropdown.Popover placement="bottom end">
+                  <Dropdown.Menu
+                    onAction={(key) => {
+                      if (key === "print") window.print();
+                      if (key === "edit") navigate(`/admin/rezept/${data.id}`);
+                    }}
+                  >
+                    <Dropdown.Item id="print">Drucken</Dropdown.Item>
+                    <Dropdown.Item id="edit">Bearbeiten</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </Dropdown>
+            </div>
+
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <Button variant="secondary" size="sm" onPress={() => void onShare()}>
+                Teilen
               </Button>
-            </Link>
-          </>
+              <Link to={`/einkaufsliste?items=${shoppingItems}`}>
+                <Button variant="secondary" size="sm">
+                  Einkaufsliste
+                </Button>
+              </Link>
+              <Button variant="secondary" size="sm" onPress={() => window.print()}>
+                Drucken
+              </Button>
+              <Link to={`/admin/rezept/${data.id}`}>
+                <Button variant="secondary" size="sm">
+                  Bearbeiten
+                </Button>
+              </Link>
+            </div>
+          </div>
         }
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
