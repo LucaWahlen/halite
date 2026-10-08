@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Button, Modal } from "@heroui/react";
 
-const ASPECTS = {
-  "16:9": 16 / 9,
-  "4:3": 4 / 3,
-  "1:1": 1,
-} as const;
-
-type Aspect = keyof typeof ASPECTS;
-
+const ASPECT_RATIO = 4 / 3;
 const OUTPUT_WIDTH = 1600;
 const MAX_ZOOM = 3;
 
@@ -27,7 +20,6 @@ export function ImageCropper({
   onConfirm: (file: File) => void;
 }) {
   const [url] = useState(() => URL.createObjectURL(file));
-  const [aspect, setAspect] = useState<Aspect>("16:9");
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 });
@@ -36,7 +28,7 @@ export function ImageCropper({
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; orig: Offset } | null>(null);
 
-  const ratio = ASPECTS[aspect];
+  const ratio = ASPECT_RATIO;
   const scale = natural && viewport.w > 0 ? Math.max(viewport.w / natural.w, viewport.h / natural.h) * zoom : 1;
   const displayW = natural ? natural.w * scale : 0;
   const displayH = natural ? natural.h * scale : 0;
@@ -68,7 +60,7 @@ export function ImageCropper({
     const s = Math.max(viewport.w / natural.w, viewport.h / natural.h) * zoom;
     setOffset({ x: (viewport.w - natural.w * s) / 2, y: (viewport.h - natural.h * s) / 2 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [natural, viewport.w, viewport.h, aspect]);
+  }, [natural, viewport.w, viewport.h]);
 
   const clamp = useCallback(
     (value: Offset): Offset => {
@@ -148,22 +140,6 @@ export function ImageCropper({
           </Modal.Header>
           <Modal.Body>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-1.5">
-                {(Object.keys(ASPECTS) as Aspect[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
-                      aspect === key ? "bg-accent text-accent-foreground" : "bg-surface-secondary text-muted hover:text-foreground"
-                    }`}
-                    aria-pressed={aspect === key}
-                    onClick={() => setAspect(key)}
-                  >
-                    {key}
-                  </button>
-                ))}
-              </div>
-
               <div
                 ref={viewportRef}
                 className="relative w-full touch-none overflow-hidden rounded-xl bg-black"

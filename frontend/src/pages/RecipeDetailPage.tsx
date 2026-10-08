@@ -178,7 +178,7 @@ export function RecipeDetailPage() {
             <img
               src={data.image_url}
               alt={data.title}
-              className="aspect-[16/9] w-full rounded-3xl border border-border/70 object-cover"
+              className="aspect-[4/3] w-full rounded-3xl border border-border/70 object-cover"
             />
           ) : null}
 
