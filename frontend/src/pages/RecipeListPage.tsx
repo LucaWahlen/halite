@@ -15,8 +15,8 @@ const SORTS: { value: RecipeSort; label: string }[] = [
   { value: "newest", label: "Neu zuerst" },
   { value: "oldest", label: "Älteste zuerst" },
   { value: "quickest", label: "Schnellste zuerst" },
-  { value: "title", label: "Titel A–Z" },
-  { value: "title_desc", label: "Titel Z–A" },
+  { value: "title", label: "Titel A-Z" },
+  { value: "title_desc", label: "Titel Z-A" },
   { value: "updated", label: "Zuletzt geändert" },
 ];
 
@@ -111,9 +111,7 @@ export function RecipeListPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
         <div className="mb-8 max-w-2xl">
           <h1 className="font-display text-3xl font-bold text-balance sm:text-4xl">Rezepte</h1>
-          <p className="mt-2 text-muted">
-            Eine kleine, feine Sammlung. Alles öffentlich zum Nachkochen — Bearbeiten nur mit Passwort.
-          </p>
+          <p className="mt-2 text-muted">Alle Rezepte zum Nachkochen.</p>
         </div>
 
         <div className="mb-6 flex flex-col gap-3">

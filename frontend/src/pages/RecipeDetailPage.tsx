@@ -14,7 +14,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
       <span className="text-xs tracking-wide text-muted uppercase">{label}</span>
-      <span className="tabular-nums">{value || "—"}</span>
+      <span className="tabular-nums">{value || "-"}</span>
     </div>
   );
 }

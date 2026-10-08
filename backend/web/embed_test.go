@@ -8,7 +8,7 @@ import (
 func TestInjectMeta(t *testing.T) {
 	index := []byte("<html><head><title>halite</title></head><body></body></html>")
 	out := string(injectMeta(index, Meta{
-		Title:       "Kürbissuppe – halite",
+		Title:       "Kürbissuppe · halite",
 		Description: "Cremig",
 		Image:       "https://example.com/api/v1/recipes/x/image",
 		URL:         "https://example.com/rezept/x",
@@ -16,8 +16,8 @@ func TestInjectMeta(t *testing.T) {
 		SiteName:    "halite",
 	}))
 	for _, want := range []string{
-		`<title>Kürbissuppe – halite</title>`,
-		`property="og:title" content="Kürbissuppe – halite"`,
+		`<title>Kürbissuppe · halite</title>`,
+		`property="og:title" content="Kürbissuppe · halite"`,
 		`property="og:image" content="https://example.com/api/v1/recipes/x/image"`,
 		`property="og:type" content="article"`,
 		`name="twitter:card" content="summary_large_image"`,

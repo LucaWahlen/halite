@@ -122,7 +122,7 @@ export function ShoppingListPage() {
               <CartIcon /> Einkaufsliste
             </h1>
             <p className="mt-2 text-muted">
-              Rezepte auswählen, Portionen anpassen — die Zutaten werden automatisch zusammengerechnet.
+              Rezepte auswählen und Portionen anpassen. Die Zutaten werden automatisch zusammengerechnet.
             </p>
           </div>
           {selectedIds.length > 0 ? (

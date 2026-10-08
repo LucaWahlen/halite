@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	defaultTitle       = "halite – Rezepte"
+	defaultTitle       = "halite · Rezepte"
 	defaultDescription = "Eine kleine, feine Rezeptsammlung zum Nachkochen."
 	maxDescription     = 200
 )
@@ -39,7 +39,7 @@ func metaResolver(recipes *service.RecipeService) web.Resolver {
 			return meta, true
 		}
 		meta.Type = "article"
-		meta.Title = rec.Title + " – halite"
+		meta.Title = rec.Title + " · halite"
 		desc := strings.TrimSpace(rec.Description)
 		if desc == "" {
 			desc = ingredientSummary(rec)

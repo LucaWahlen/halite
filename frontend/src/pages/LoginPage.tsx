@@ -34,7 +34,6 @@ export function LoginPage() {
           <Card.Content className="gap-5 p-6">
             <div>
               <h1 className="font-display text-xl font-bold">Anmelden</h1>
-              <p className="mt-1 text-sm text-muted">Nur zum Bearbeiten der Rezepte erforderlich.</p>
             </div>
             <form
               className="flex flex-col gap-4"
