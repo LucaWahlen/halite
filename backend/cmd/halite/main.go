@@ -72,7 +72,7 @@ func run() error {
 		Images:   images,
 	}, logger)
 
-	spa, err := web.Handler()
+	spa, err := web.Handler(metaResolver(recipeSvc))
 	if err != nil {
 		return err
 	}

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Chip } from "@heroui/react";
+import { Button, Card, Chip, toast } from "@heroui/react";
 
 import { api, ApiError } from "../api/client";
 import type { Ingredient } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { formatAmount, formatDate, formatMinutes } from "../lib/format";
+import { shareOrCopy } from "../lib/share";
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
@@ -134,12 +135,32 @@ export function RecipeDetailPage() {
 
   const factor = data.servings > 0 && portions > 0 ? portions / data.servings : 1;
   const scaled = factor !== 1;
+  const shoppingItems = `${data.id}:${portions > 0 ? portions : 1}`;
+
+  const onShare = async () => {
+    const result = await shareOrCopy({
+      title: data.title,
+      text: data.description,
+      url: `${window.location.origin}/rezept/${data.id}`,
+    });
+    if (result === "copied") toast.success("Link kopiert.");
+    else if (result === "shared") toast.success("Geteilt.");
+    else toast.warning("Teilen nicht möglich.");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <AppHeader
         actions={
           <>
+            <Button variant="secondary" size="sm" className="no-print" onPress={() => void onShare()}>
+              Teilen
+            </Button>
+            <Link to={`/einkaufsliste?items=${shoppingItems}`}>
+              <Button variant="secondary" size="sm" className="no-print">
+                Einkaufsliste
+              </Button>
+            </Link>
             <Button variant="secondary" size="sm" className="no-print" onPress={() => window.print()}>
               Drucken
             </Button>

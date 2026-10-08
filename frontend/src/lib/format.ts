@@ -27,7 +27,7 @@ export function formatDate(iso: string): string {
   return dateFormatter.format(date);
 }
 
-const amountFormatter = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 });
+const amountFormatter = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2, useGrouping: false });
 
 export function formatAmount(value: number): string {
   if (!Number.isFinite(value) || value <= 0) {

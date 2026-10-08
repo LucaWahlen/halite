@@ -5,6 +5,7 @@ import { Button, Card, Modal, toast, useOverlayState } from "@heroui/react";
 
 import { api } from "../api/client";
 import type { Ingredient, Recipe, RecipeInput } from "../api/client";
+import { ImageCropper } from "../components/ImageCropper";
 import { apiErrorMessage } from "../lib/errors";
 
 type IngredientForm = { amount: string; unit: string; name: string };
@@ -94,6 +95,7 @@ export function RecipeEditor() {
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageRemoved, setImageRemoved] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ["admin-recipe", id],
@@ -208,10 +210,16 @@ export function RecipeEditor() {
 
   const onPickImage = (file: File | null) => {
     if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setCropFile(file);
+  };
+
+  const applyImage = (file: File) => {
     if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     setPendingImage(file);
     setPreviewUrl(URL.createObjectURL(file));
     setImageRemoved(false);
+    setCropFile(null);
   };
 
   const clearImage = () => {
@@ -338,7 +346,7 @@ export function RecipeEditor() {
                   className="text-sm"
                   onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
                 />
-                <p className="text-xs text-muted">JPEG, PNG oder WebP, max. 10 MB.</p>
+                <p className="text-xs text-muted">JPEG, PNG oder WebP, max. 10 MB. Nach der Auswahl kannst du das Bild zuschneiden.</p>
                 {previewUrl ? (
                   <Button variant="secondary" size="sm" type="button" onPress={clearImage}>
                     Bild entfernen
@@ -525,6 +533,10 @@ export function RecipeEditor() {
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>
+
+      {cropFile ? (
+        <ImageCropper file={cropFile} onCancel={() => setCropFile(null)} onConfirm={applyImage} />
+      ) : null}
     </div>
   );
 }

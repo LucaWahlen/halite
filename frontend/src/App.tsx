@@ -7,6 +7,7 @@ import { AdminSettings } from "./pages/AdminSettings";
 import { RecipeEditor } from "./pages/RecipeEditor";
 import { RecipeListPage } from "./pages/RecipeListPage";
 import { RecipeDetailPage } from "./pages/RecipeDetailPage";
+import { ShoppingListPage } from "./pages/ShoppingListPage";
 import { LoginPage } from "./pages/LoginPage";
 import { LegalPage } from "./pages/LegalPage";
 
@@ -16,6 +17,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<RecipeListPage />} />
         <Route path="/rezept/:id" element={<RecipeDetailPage />} />
+        <Route path="/einkaufsliste" element={<ShoppingListPage />} />
         <Route path="/impressum" element={<LegalPage kind="imprint" />} />
         <Route path="/datenschutz" element={<LegalPage kind="privacy" />} />
         <Route path="/login" element={<LoginPage />} />
