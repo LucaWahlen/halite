@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Button, Card, useOverlayState } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 
 import { api } from "../api/client";
-import type { RecipeSort, RecipeSummary } from "../api/client";
+import type { RecipeSort } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
-import { AddToListDialog } from "../components/AddToListDialog";
 import { CartButton } from "../components/CartButton";
 import { SiteFooter } from "../components/SiteFooter";
 import { RecipeCard } from "../components/RecipeCard";
@@ -30,8 +29,6 @@ export function RecipeListPage() {
   const sort: RecipeSort = SORTS.some((s) => s.value === sortParam) ? (sortParam as RecipeSort) : "newest";
   const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const [searchInput, setSearchInput] = useState(q);
-  const addModal = useOverlayState();
-  const [addTarget, setAddTarget] = useState<RecipeSummary | null>(null);
 
   const updateParams = (next: Record<string, string | undefined>) => {
     setSearchParams(
@@ -88,14 +85,11 @@ export function RecipeListPage() {
           <>
             <CartButton />
             <Link to="/admin" aria-label="Anmelden">
-              <Button variant="secondary" size="sm">
-                <span className="flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
-                    <rect x="4" y="11" width="16" height="10" rx="2" />
-                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                  </svg>
-                  Login
-                </span>
+              <Button variant="secondary" size="sm" isIconOnly>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
               </Button>
             </Link>
           </>
@@ -200,14 +194,7 @@ export function RecipeListPage() {
         {items.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                onAdd={(target) => {
-                  setAddTarget(target);
-                  addModal.open();
-                }}
-              />
+              <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
         ) : null}
@@ -237,7 +224,6 @@ export function RecipeListPage() {
         ) : null}
       </main>
       <SiteFooter />
-      <AddToListDialog recipe={addTarget} isOpen={addModal.isOpen} onOpenChange={addModal.setOpen} />
     </div>
   );
 }

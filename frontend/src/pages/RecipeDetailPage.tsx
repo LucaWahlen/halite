@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Chip, Dropdown, useOverlayState, toast } from "@heroui/react";
+import { Button, Card, Chip, Dropdown, toast } from "@heroui/react";
 
 import { api, ApiError } from "../api/client";
 import type { Ingredient } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
-import { AddToListDialog } from "../components/AddToListDialog";
+import { CartButton } from "../components/CartButton";
 import { SiteFooter } from "../components/SiteFooter";
+import { addItem } from "../lib/cart";
 import { formatAmount, formatDate, formatMinutes } from "../lib/format";
 import { shareOrCopy } from "../lib/share";
 
@@ -86,16 +87,6 @@ function ShareIcon() {
   );
 }
 
-function CartIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
-      <circle cx="9" cy="20" r="1.4" />
-      <circle cx="18" cy="20" r="1.4" />
-      <path d="M2 3h2.2l2.3 11.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L21 7H5.2" />
-    </svg>
-  );
-}
-
 function DotsIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden="true">
@@ -106,12 +97,20 @@ function DotsIcon() {
   );
 }
 
+function CartPlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+      <path d="M2 3h2.2l2.3 11.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L21 7H5.2" />
+      <path d="M12 4.5v5M9.5 7h5" />
+    </svg>
+  );
+}
+
 export function RecipeDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [portions, setPortions] = useState(0);
-  const addModal = useOverlayState();
 
   const { data, isError, error, isLoading } = useQuery({
     queryKey: ["recipe", id],
@@ -181,55 +180,40 @@ export function RecipeDetailPage() {
     else toast.warning("Teilen nicht möglich.");
   };
 
+  const addCurrent = () => {
+    const target = portions > 0 ? portions : data.servings > 0 ? data.servings : 1;
+    addItem(data.id, target);
+    toast.success("Zur Einkaufsliste hinzugefügt.");
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <AppHeader
         actions={
           <div className="no-print flex items-center gap-1.5">
-            <div className="flex items-center gap-1.5 sm:hidden">
-              <Button variant="secondary" size="sm" isIconOnly aria-label="Teilen" onPress={() => void onShare()}>
-                <ShareIcon />
-              </Button>
-              <Button variant="secondary" size="sm" isIconOnly aria-label="Zur Einkaufsliste" onPress={addModal.open}>
-                <CartIcon />
-              </Button>
-              <Dropdown>
-                <Dropdown.Trigger
-                  aria-label="Weitere Aktionen"
-                  className="inline-grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+            <CartButton />
+            <Button variant="secondary" size="sm" isIconOnly aria-label="Teilen" onPress={() => void onShare()}>
+              <ShareIcon />
+            </Button>
+            <Dropdown>
+              <Dropdown.Trigger
+                aria-label="Weitere Aktionen"
+                className="inline-grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+              >
+                <DotsIcon />
+              </Dropdown.Trigger>
+              <Dropdown.Popover placement="bottom end">
+                <Dropdown.Menu
+                  onAction={(key) => {
+                    if (key === "print") window.print();
+                    if (key === "edit") navigate(`/admin/rezept/${data.id}`);
+                  }}
                 >
-                  <DotsIcon />
-                </Dropdown.Trigger>
-                <Dropdown.Popover placement="bottom end">
-                  <Dropdown.Menu
-                    onAction={(key) => {
-                      if (key === "print") window.print();
-                      if (key === "edit") navigate(`/admin/rezept/${data.id}`);
-                    }}
-                  >
-                    <Dropdown.Item id="print">Drucken</Dropdown.Item>
-                    <Dropdown.Item id="edit">Bearbeiten</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown.Popover>
-              </Dropdown>
-            </div>
-
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <Button variant="secondary" size="sm" onPress={() => void onShare()}>
-                Teilen
-              </Button>
-              <Button variant="secondary" size="sm" onPress={addModal.open}>
-                Einkaufsliste
-              </Button>
-              <Button variant="secondary" size="sm" onPress={() => window.print()}>
-                Drucken
-              </Button>
-              <Link to={`/admin/rezept/${data.id}`}>
-                <Button variant="secondary" size="sm">
-                  Bearbeiten
-                </Button>
-              </Link>
-            </div>
+                  <Dropdown.Item id="print">Drucken</Dropdown.Item>
+                  <Dropdown.Item id="edit">Bearbeiten</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
         }
       />
@@ -259,7 +243,7 @@ export function RecipeDetailPage() {
             ) : null}
           </header>
 
-          <Card>
+          <Card className="no-print">
             <Card.Content className="grid grid-cols-2 items-start gap-4 sm:grid-cols-4">
               {data.servings > 0 ? (
                 <PortionStepper portions={portions} onChange={setPortions} />
@@ -271,6 +255,12 @@ export function RecipeDetailPage() {
               <MetaItem label="Gesamt" value={formatMinutes(data.total_minutes)} />
             </Card.Content>
           </Card>
+
+          <Button variant="secondary" className="no-print self-start" onPress={addCurrent}>
+            <span className="flex items-center gap-1.5">
+              <CartPlusIcon /> Zur Einkaufsliste
+            </span>
+          </Button>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,18rem)_1fr]">
             <section className="flex flex-col gap-3">
@@ -329,12 +319,6 @@ export function RecipeDetailPage() {
         </article>
       </main>
       <SiteFooter />
-      <AddToListDialog
-        recipe={{ id: data.id, title: data.title, servings: data.servings }}
-        initialPortions={portions}
-        isOpen={addModal.isOpen}
-        onOpenChange={addModal.setOpen}
-      />
     </div>
   );
 }
