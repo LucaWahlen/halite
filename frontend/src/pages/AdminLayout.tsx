@@ -46,7 +46,7 @@ export function AdminLayout() {
     mutationFn: () => api.logout(),
     onSuccess: () => {
       queryClient.clear();
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     },
   });
 

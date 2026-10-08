@@ -27,6 +27,13 @@ func Handler() (http.Handler, error) {
 			name = "index.html"
 		}
 		if _, err := fs.Stat(sub, name); err != nil {
+			// Missing static files (anything with a file extension) must 404
+			// instead of being answered with the SPA shell, otherwise the
+			// browser receives HTML for e.g. /favicon.svg.
+			if path.Ext(name) != "" {
+				http.NotFound(w, r)
+				return
+			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Header().Set("Cache-Control", "no-cache")
 			w.WriteHeader(http.StatusOK)
