@@ -52,37 +52,7 @@ export function formatLine(line: ShoppingLine): string {
   return line.name;
 }
 
-export function buildShoppingText(entries: SelectionEntry[], lines: ShoppingLine[]): string {
-  const recipes = entries
-    .map((e) => {
-      const portions = e.recipe.servings > 0 ? `${e.portions} ${e.portions === 1 ? "Portion" : "Portionen"}` : "ganzes Rezept";
-      return `- ${e.recipe.title} (${portions})`;
-    })
-    .join("\n");
+export function buildShoppingText(lines: ShoppingLine[]): string {
   const items = lines.map((line) => `- ${formatLine(line)}`).join("\n");
-  const parts = ["Einkaufsliste"];
-  if (recipes) {
-    parts.push(`Rezepte:\n${recipes}`);
-  }
-  if (items) {
-    parts.push(`Zutaten:\n${items}`);
-  }
-  return parts.join("\n\n");
-}
-
-export function encodeSelection(selection: Map<string, number>): string {
-  return [...selection.entries()].map(([id, portions]) => `${id}:${portions}`).join(",");
-}
-
-export function decodeSelection(raw: string): Map<string, number> {
-  const selection = new Map<string, number>();
-  for (const part of raw.split(",")) {
-    const [id, portions] = part.split(":");
-    if (!id) {
-      continue;
-    }
-    const value = Number.parseInt(portions ?? "", 10);
-    selection.set(id, Number.isNaN(value) ? 1 : Math.max(1, Math.min(1000, value)));
-  }
-  return selection;
+  return `Einkaufsliste\n\n${items}`;
 }

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Button, Card } from "@heroui/react";
+import { Button, Card, useOverlayState } from "@heroui/react";
 
 import { api } from "../api/client";
-import type { RecipeSort } from "../api/client";
+import type { RecipeSort, RecipeSummary } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
+import { AddToListDialog } from "../components/AddToListDialog";
+import { CartButton } from "../components/CartButton";
 import { SiteFooter } from "../components/SiteFooter";
 import { RecipeCard } from "../components/RecipeCard";
 
@@ -28,6 +30,8 @@ export function RecipeListPage() {
   const sort: RecipeSort = SORTS.some((s) => s.value === sortParam) ? (sortParam as RecipeSort) : "newest";
   const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const [searchInput, setSearchInput] = useState(q);
+  const addModal = useOverlayState();
+  const [addTarget, setAddTarget] = useState<RecipeSummary | null>(null);
 
   const updateParams = (next: Record<string, string | undefined>) => {
     setSearchParams(
@@ -82,18 +86,7 @@ export function RecipeListPage() {
       <AppHeader
         actions={
           <>
-            <Link to="/einkaufsliste" aria-label="Einkaufsliste">
-              <Button variant="secondary" size="sm">
-                <span className="flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
-                    <circle cx="9" cy="20" r="1.4" />
-                    <circle cx="18" cy="20" r="1.4" />
-                    <path d="M2 3h2.2l2.3 11.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L21 7H5.2" />
-                  </svg>
-                  Einkaufsliste
-                </span>
-              </Button>
-            </Link>
+            <CartButton />
             <Link to="/admin" aria-label="Anmelden">
               <Button variant="secondary" size="sm">
                 <span className="flex items-center gap-1.5">
@@ -207,7 +200,14 @@ export function RecipeListPage() {
         {items.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                onAdd={(target) => {
+                  setAddTarget(target);
+                  addModal.open();
+                }}
+              />
             ))}
           </div>
         ) : null}
@@ -237,6 +237,7 @@ export function RecipeListPage() {
         ) : null}
       </main>
       <SiteFooter />
+      <AddToListDialog recipe={addTarget} isOpen={addModal.isOpen} onOpenChange={addModal.setOpen} />
     </div>
   );
 }

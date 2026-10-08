@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Chip, Dropdown, toast } from "@heroui/react";
+import { Button, Card, Chip, Dropdown, useOverlayState, toast } from "@heroui/react";
 
 import { api, ApiError } from "../api/client";
 import type { Ingredient } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
+import { AddToListDialog } from "../components/AddToListDialog";
 import { SiteFooter } from "../components/SiteFooter";
 import { formatAmount, formatDate, formatMinutes } from "../lib/format";
 import { shareOrCopy } from "../lib/share";
@@ -110,6 +111,7 @@ export function RecipeDetailPage() {
   const navigate = useNavigate();
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [portions, setPortions] = useState(0);
+  const addModal = useOverlayState();
 
   const { data, isError, error, isLoading } = useQuery({
     queryKey: ["recipe", id],
@@ -167,7 +169,6 @@ export function RecipeDetailPage() {
 
   const factor = data.servings > 0 && portions > 0 ? portions / data.servings : 1;
   const scaled = factor !== 1;
-  const shoppingItems = `${data.id}:${portions > 0 ? portions : 1}`;
 
   const onShare = async () => {
     const result = await shareOrCopy({
@@ -189,11 +190,9 @@ export function RecipeDetailPage() {
               <Button variant="secondary" size="sm" isIconOnly aria-label="Teilen" onPress={() => void onShare()}>
                 <ShareIcon />
               </Button>
-              <Link to={`/einkaufsliste?items=${shoppingItems}`} aria-label="Zur Einkaufsliste">
-                <Button variant="secondary" size="sm" isIconOnly>
-                  <CartIcon />
-                </Button>
-              </Link>
+              <Button variant="secondary" size="sm" isIconOnly aria-label="Zur Einkaufsliste" onPress={addModal.open}>
+                <CartIcon />
+              </Button>
               <Dropdown>
                 <Dropdown.Trigger
                   aria-label="Weitere Aktionen"
@@ -219,11 +218,9 @@ export function RecipeDetailPage() {
               <Button variant="secondary" size="sm" onPress={() => void onShare()}>
                 Teilen
               </Button>
-              <Link to={`/einkaufsliste?items=${shoppingItems}`}>
-                <Button variant="secondary" size="sm">
-                  Einkaufsliste
-                </Button>
-              </Link>
+              <Button variant="secondary" size="sm" onPress={addModal.open}>
+                Einkaufsliste
+              </Button>
               <Button variant="secondary" size="sm" onPress={() => window.print()}>
                 Drucken
               </Button>
@@ -332,6 +329,12 @@ export function RecipeDetailPage() {
         </article>
       </main>
       <SiteFooter />
+      <AddToListDialog
+        recipe={{ id: data.id, title: data.title, servings: data.servings }}
+        initialPortions={portions}
+        isOpen={addModal.isOpen}
+        onOpenChange={addModal.setOpen}
+      />
     </div>
   );
 }

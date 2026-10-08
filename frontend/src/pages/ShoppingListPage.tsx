@@ -1,12 +1,14 @@
 import { useMemo } from "react";
-import { useSearchParams } from "react-router";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
+import { useQueries } from "@tanstack/react-query";
 import { Button, Card, toast } from "@heroui/react";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { SiteFooter } from "../components/SiteFooter";
-import { aggregate, buildShoppingText, decodeSelection, encodeSelection, formatLine } from "../lib/shopping";
+import { clearCart, removeItem, setPortions, useCart } from "../lib/cart";
+import type { CartItem } from "../lib/cart";
+import { aggregate, buildShoppingText, formatLine } from "../lib/shopping";
 import type { SelectionEntry } from "../lib/shopping";
 import { shareOrCopy } from "../lib/share";
 
@@ -20,79 +22,41 @@ function CartIcon() {
   );
 }
 
-export function ShoppingListPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const itemsParam = searchParams.get("items") ?? "";
-  const selection = useMemo(() => decodeSelection(itemsParam), [itemsParam]);
-  const selectedIds = useMemo(() => [...selection.keys()], [selection]);
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["recipes", "shopping-picker"],
-    queryFn: () => api.listRecipes({ pageSize: 100, sort: "title" }),
-    staleTime: 60_000,
-  });
+export function ShoppingListPage() {
+  const cart = useCart();
+  const ids = useMemo(() => cart.map((item) => item.id), [cart]);
 
   const detailQueries = useQueries({
-    queries: selectedIds.map((id) => ({
+    queries: ids.map((id) => ({
       queryKey: ["recipe", id],
       queryFn: () => api.getRecipe(id),
       staleTime: 60_000,
     })),
   });
+  const dataKey = detailQueries.map((q) => q.dataUpdatedAt).join(",");
 
   const entries = useMemo<SelectionEntry[]>(() => {
     const list: SelectionEntry[] = [];
-    selectedIds.forEach((id, index) => {
+    cart.forEach((item: CartItem, index) => {
       const recipe = detailQueries[index]?.data;
       if (recipe) {
-        list.push({ recipe, portions: selection.get(id) ?? 1 });
+        list.push({ recipe, portions: item.portions });
       }
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIds, selection, detailQueries.map((q) => q.dataUpdatedAt).join(",")]);
+  }, [cart, dataKey]);
 
   const lines = useMemo(() => aggregate(entries), [entries]);
-  const recipes = data?.items ?? [];
-  const servingsById = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const recipe of recipes) {
-      map.set(recipe.id, recipe.servings);
-    }
-    return map;
-  }, [recipes]);
-
-  const apply = (next: Map<string, number>) => {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        const encoded = encodeSelection(next);
-        if (encoded) params.set("items", encoded);
-        else params.delete("items");
-        return params;
-      },
-      { replace: true },
-    );
-  };
-
-  const toggle = (id: string) => {
-    const next = new Map(selection);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      const servings = servingsById.get(id) ?? 0;
-      next.set(id, servings > 0 ? servings : 1);
-    }
-    apply(next);
-  };
-
-  const setPortions = (id: string, portions: number) => {
-    const next = new Map(selection);
-    next.set(id, Math.max(1, Math.min(1000, portions)));
-    apply(next);
-  };
-
-  const shareText = () => buildShoppingText(entries, lines);
+  const shareText = () => buildShoppingText(lines);
 
   const onShare = async () => {
     const result = await shareOrCopy({ title: "Einkaufsliste", text: shareText() });
@@ -110,115 +74,115 @@ export function ShoppingListPage() {
     }
   };
 
-  const totalPortionsNote = entries.length > 0 ? `${entries.length} ${entries.length === 1 ? "Rezept" : "Rezepte"} ausgewählt` : "";
+  const remaining = cart.length - entries.length;
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <AppHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display flex items-center gap-2 text-3xl font-bold">
-              <CartIcon /> Einkaufsliste
-            </h1>
-            <p className="mt-2 text-muted">
-              Rezepte auswählen und Portionen anpassen. Die Zutaten werden automatisch zusammengerechnet.
-            </p>
-          </div>
-          {selectedIds.length > 0 ? (
-            <Button variant="secondary" size="sm" onPress={() => apply(new Map())}>
-              Auswahl zurücksetzen
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <h1 className="font-display flex items-center gap-2 text-3xl font-bold">
+            <CartIcon /> Einkaufsliste
+          </h1>
+          {cart.length > 0 ? (
+            <Button variant="secondary" size="sm" onPress={() => clearCart()}>
+              Liste leeren
             </Button>
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_minmax(0,22rem)]">
-          <section className="flex flex-col gap-3">
-            <h2 className="font-display text-lg font-semibold">Rezepte</h2>
-            {isLoading ? <p className="text-muted">Wird geladen …</p> : null}
-            {data && recipes.length === 0 ? <p className="text-muted">Noch keine Rezepte vorhanden.</p> : null}
-            <ul className="flex flex-col gap-2">
-              {recipes.map((recipe) => {
-                const selected = selection.has(recipe.id);
-                const portions = selection.get(recipe.id) ?? 0;
-                return (
-                  <li key={recipe.id}>
-                    <Card className={selected ? "ring-1 ring-accent/60" : undefined}>
-                      <Card.Content className="flex flex-row items-center gap-3">
-                        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                          <input
-                            type="checkbox"
-                            className="size-4 shrink-0 accent-[var(--accent)]"
-                            checked={selected}
-                            onChange={() => toggle(recipe.id)}
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{recipe.title}</span>
-                            {recipe.servings > 0 ? (
-                              <span className="text-xs text-muted">{recipe.servings} Portionen</span>
-                            ) : null}
+        {cart.length === 0 ? (
+          <Card>
+            <Card.Content className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="font-display text-lg font-semibold">Einkaufsliste ist leer</p>
+              <p className="max-w-sm text-sm text-muted">
+                Füge Rezepte über die Übersicht oder die Rezeptseite hinzu.
+              </p>
+              <Link to="/">
+                <Button>Zu den Rezepten</Button>
+              </Link>
+            </Card.Content>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-6">
+            <section className="flex flex-col gap-3">
+              <h2 className="font-display text-lg font-semibold">Zutaten</h2>
+              {lines.length === 0 ? (
+                <p className="text-sm text-muted">Die ausgewählten Rezepte haben keine Zutaten.</p>
+              ) : (
+                <Card>
+                  <Card.Content>
+                    <ul className="flex flex-col gap-1.5">
+                      {lines.map((line, index) => (
+                        <li key={`${line.name}-${line.unit}-${index}`} className="flex gap-2 text-sm">
+                          <span aria-hidden="true" className="text-accent">
+                            •
                           </span>
-                        </label>
-                        {selected ? (
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <span className="text-xs text-muted">Portionen</span>
-                            <input
-                              type="number"
-                              min={1}
-                              max={1000}
-                              value={portions}
-                              aria-label={`Portionen für ${recipe.title}`}
-                              className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-center text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                              onChange={(e) => {
-                                const value = Number.parseInt(e.target.value, 10);
-                                setPortions(recipe.id, Number.isNaN(value) ? 1 : value);
-                              }}
-                            />
-                          </div>
-                        ) : null}
-                      </Card.Content>
-                    </Card>
+                          <span>{formatLine(line)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card.Content>
+                </Card>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button isDisabled={lines.length === 0} onPress={() => void onShare()}>
+                  Teilen
+                </Button>
+                <Button variant="secondary" isDisabled={lines.length === 0} onPress={() => void onCopy()}>
+                  Text kopieren
+                </Button>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h2 className="font-display text-lg font-semibold">Rezepte</h2>
+              <ul className="flex flex-col gap-2">
+                {entries.map(({ recipe, portions }) => (
+                  <li
+                    key={recipe.id}
+                    className="flex items-center gap-3 rounded-xl border border-border/70 bg-surface py-2 pl-4 pr-2"
+                  >
+                    <Link
+                      to={`/rezept/${recipe.id}`}
+                      className="min-w-0 flex-1 truncate text-sm font-medium focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      {recipe.title}
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={1}
+                        max={1000}
+                        value={portions}
+                        aria-label={`Portionen für ${recipe.title}`}
+                        className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-center text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        onChange={(e) => {
+                          const value = Number.parseInt(e.target.value, 10);
+                          setPortions(recipe.id, Number.isNaN(value) ? 1 : value);
+                        }}
+                      />
+                      <span className="text-xs text-muted">Portionen</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="grid size-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-danger/10 hover:text-danger focus-visible:ring-2 focus-visible:ring-accent"
+                      aria-label={`${recipe.title} entfernen`}
+                      onClick={() => removeItem(recipe.id)}
+                    >
+                      <CloseIcon />
+                    </button>
                   </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="lg:sticky lg:top-20 lg:self-start">
-            <Card>
-              <Card.Content className="gap-4">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="font-display text-lg font-semibold">Liste</h2>
-                  {totalPortionsNote ? <span className="text-xs text-muted">{totalPortionsNote}</span> : null}
-                </div>
-
-                {entries.length === 0 ? (
-                  <p className="text-sm text-muted">Wähle links Rezepte aus, um die Einkaufsliste zu erstellen.</p>
-                ) : (
-                  <ul className="flex flex-col gap-1.5">
-                    {lines.map((line, index) => (
-                      <li key={`${line.name}-${line.unit}-${index}`} className="flex gap-2 text-sm">
-                        <span aria-hidden="true" className="text-accent">
-                          •
-                        </span>
-                        <span>{formatLine(line)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
-                  <Button isDisabled={entries.length === 0} onPress={() => void onShare()}>
-                    Teilen
-                  </Button>
-                  <Button variant="secondary" isDisabled={entries.length === 0} onPress={() => void onCopy()}>
-                    Text kopieren
-                  </Button>
-                </div>
-              </Card.Content>
-            </Card>
-          </section>
-        </div>
+                ))}
+              </ul>
+              {remaining > 0 ? (
+                <p className="text-xs text-muted">
+                  {remaining} {remaining === 1 ? "Rezept ist" : "Rezepte sind"} nicht mehr verfügbar.
+                </p>
+              ) : null}
+            </section>
+          </div>
+        )}
       </main>
       <SiteFooter />
     </div>
