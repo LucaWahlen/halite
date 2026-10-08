@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, ui-serif, serif;
+}
+
+/*
+ * halite design system — a warm, editorial cookbook palette layered on top of
+ * the HeroUI token contract. HeroUI maps `--color-*` utilities to these raw
+ * variables, so overriding them here re-themes every component.
+ */
+:root,
+[data-theme="light"],
+.default {
+  --background: oklch(0.972 0.013 85);
+  --foreground: oklch(0.255 0.021 55);
+
+  --surface: oklch(0.995 0.007 92);
+  --surface-secondary: oklch(0.951 0.016 84);
+  --surface-tertiary: oklch(0.921 0.019 84);
+
+  --overlay: oklch(0.995 0.007 92);
+  --overlay-foreground: var(--foreground);
+
+  --muted: oklch(0.548 0.027 58);
+
+  --border: oklch(0.884 0.022 80);
+  --separator: oklch(0.9 0.02 80);
+
+  --accent: oklch(0.598 0.202 33);
+  --accent-foreground: oklch(0.99 0.012 90);
+
+  --success: oklch(0.62 0.15 150);
+  --success-foreground: oklch(0.99 0.01 150);
+
+  --danger: oklch(0.552 0.213 27);
+  --danger-foreground: oklch(0.99 0.01 90);
+
+  --default: oklch(0.929 0.013 84);
+  --default-foreground: var(--foreground);
+
+  --segment: oklch(0.995 0.007 92);
+  --segment-foreground: var(--foreground);
+
+  --field-background: oklch(0.998 0.005 92);
+
+  --backdrop: rgba(40, 26, 14, 0.42);
+
+  --radius: 0.75rem;
+
+  --surface-shadow:
+    0 1px 2px rgba(74, 46, 22, 0.05),
+    0 10px 26px -14px rgba(74, 46, 22, 0.22),
+    0 0 1px rgba(74, 46, 22, 0.06);
+  --overlay-shadow:
+    0 2px 8px rgba(74, 46, 22, 0.08),
+    0 24px 48px -20px rgba(74, 46, 22, 0.28);
+  --field-shadow:
+    0 1px 2px rgba(74, 46, 22, 0.05),
+    0 0 1px rgba(74, 46, 22, 0.08);
+}
+
+.dark,
+[data-theme="dark"] {
+  --background: oklch(0.192 0.013 55);
+  --foreground: oklch(0.944 0.012 85);
+
+  --surface: oklch(0.238 0.016 56);
+  --surface-secondary: oklch(0.286 0.017 56);
+  --surface-tertiary: oklch(0.322 0.018 56);
+
+  --overlay: oklch(0.238 0.016 56);
+  --overlay-foreground: var(--foreground);
+
+  --muted: oklch(0.723 0.021 75);
+
+  --border: oklch(0.334 0.021 60);
+  --separator: oklch(0.3 0.02 60);
+
+  --accent: oklch(0.702 0.171 42);
+  --accent-foreground: oklch(0.17 0.02 48);
+
+  --success: oklch(0.72 0.148 152);
+  --success-foreground: oklch(0.16 0.02 150);
+
+  --danger: oklch(0.632 0.192 27);
+  --danger-foreground: oklch(0.14 0.01 27);
+
+  --default: oklch(0.3 0.016 58);
+  --default-foreground: var(--foreground);
+
+  --segment: oklch(0.3 0.016 58);
+  --segment-foreground: var(--foreground);
+
+  --field-background: oklch(0.222 0.015 56);
+
+  --backdrop: rgba(0, 0, 0, 0.62);
+
+  --surface-shadow: 0 0 0 1px rgba(255, 255, 255, 0.045);
+  --overlay-shadow: 0 0 1px rgba(255, 255, 255, 0.28) inset;
+  --field-shadow: 0 0 0 0 transparent inset;
+}
+
+html {
+  background-color: var(--background);
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* A subtle paper grain for the editorial feel. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body::before {
+    display: none;
+  }
+}
